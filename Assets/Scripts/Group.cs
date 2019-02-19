@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Group : MonoBehaviour
 {
@@ -11,9 +12,10 @@ public class Group : MonoBehaviour
     float das_left_timer_ = 0;
     float das_right_timer_ = 0;
     float gravity_timer_ = 0;
+    int gravity_score_ = 0;
 
     // 6 Hz delayed auto shift.
-    const float kDAS = 1.0f / 2;
+    const float kDAS = 1.0f / 3;
     // 30 Hz gravity.
     const float kGravity = 1.0f / 30;
 
@@ -30,7 +32,7 @@ public class Group : MonoBehaviour
                 return false;
         }
         return true;
-    };
+    }
 
     void UpdateGrid()
     {
@@ -60,8 +62,8 @@ public class Group : MonoBehaviour
         if (!IsValidGridPosition())
         {
             Debug.Log("GAME OVER");
-            Destroy(gameObject);
-            // Think about how to get this to work: Grid.DestroyAllRows();
+            Grid.score = 0;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 
@@ -74,11 +76,8 @@ public class Group : MonoBehaviour
             UpdateGrid();
             return true;
         }
-        else
-        {
-            transform.position -= v;
-            return false;
-        }
+        transform.position -= v;
+        return false;
     }
 
     void MoveDown()
@@ -86,7 +85,8 @@ public class Group : MonoBehaviour
         if (!Move(new Vector3(0, -1, 0)))
         {
             // Clear grid.
-            Grid.DeleteFullRows();
+            Grid.DeleteFullRows(gravity_score_);
+            gravity_score_ = 0;
             // Start next group.
             FindObjectOfType<Spawner>().SpawnNext();
             // It's over for us, buddy :).
@@ -135,6 +135,7 @@ public class Group : MonoBehaviour
             MoveDown();
             moving_down_ = true;
             gravity_timer_ = 0;
+            gravity_score_++;
         }
         else if (Input.GetKeyUp(KeyCode.DownArrow))
         {
@@ -178,6 +179,7 @@ public class Group : MonoBehaviour
             {
                 MoveDown();
                 gravity_timer_ = 0;
+                gravity_score_++;
             }
         }
     }

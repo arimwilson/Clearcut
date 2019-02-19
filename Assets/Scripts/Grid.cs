@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Grid : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class Grid : MonoBehaviour
     public static int h = 20;
     // Transforms are Unity positions.
     public static Transform[,] grid = new Transform[w, h];
+    public static int score;
 
     public static Vector2 RoundVec2(Vector2 v)
     {
@@ -26,14 +28,6 @@ public class Grid : MonoBehaviour
             if (grid[x, y] == null) continue;
             Destroy(grid[x, y].gameObject);
             grid[x, y] = null;
-        }
-    }
-
-    public static void DestroyAllRows()
-    {
-        for (int y = 0; y < h; y++)
-        {
-            DestroyRow(y);
         }
     }
 
@@ -66,14 +60,39 @@ public class Grid : MonoBehaviour
         return true;
     }
 
-    public static void DeleteFullRows()
+    // Deletes full rows and updates score.
+    public static void DeleteFullRows(int gravity_score)
     {
+        int rows_deleted = 0;
         for (int y = 0; y < h; y++)
         {
             if (!IsRowFull(y)) continue;
             DestroyRow(y);
             DecreaseRowsAbove(y + 1);
             y--;
+            rows_deleted++;
         }
+        int rows_score;
+        switch (rows_deleted)
+        {
+            case 1:
+                rows_score = 40;
+                break;
+            case 2:
+                rows_score = 100;
+                break;
+            case 3:
+                rows_score = 300;
+                break;
+            case 4:
+                rows_score = 1200;
+                break;
+            default:
+                rows_score = 0;
+                break;
+        }
+        score += rows_score + gravity_score;
+        GameObject.Find("ScoreText").GetComponent<Text>().text =
+            score.ToString();
     }
 }
