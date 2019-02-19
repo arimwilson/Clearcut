@@ -13,7 +13,7 @@ public class Group : MonoBehaviour
     float gravity_timer_ = 0;
 
     // 6 Hz delayed auto shift.
-    const float kDAS = 1.0f / 6;
+    const float kDAS = 1.0f / 2;
     // 30 Hz gravity.
     const float kGravity = 1.0f / 30;
 
@@ -30,7 +30,7 @@ public class Group : MonoBehaviour
                 return false;
         }
         return true;
-    }
+    };
 
     void UpdateGrid()
     {
@@ -145,42 +145,39 @@ public class Group : MonoBehaviour
             MoveDown();
     }
 
+    // Move only if timer has passed kDAS, kDAS + kGravity,
+    // kDAS + 2 * kGravity, ...
+    void MoveDAS(float timer, Vector3 v)
+    {
+        float since_das = timer - kDAS;
+        float after_since_das = since_das + Time.deltaTime;
+        if (after_since_das >= 0 &&
+            (int)(after_since_das / kGravity) >=
+            (int)(since_das / kGravity))
+        {
+            Move(v);
+        }
+    }
+
     void FixedUpdate()
     {
         if (moving_left_)
         {
-            float timer_after_update = das_left_timer_ + Time.deltaTime;
-            float timer_since_das = das_left_timer_ - kDAS;
-            if (das_left_timer_ <= kDAS && timer_after_update >= kDAS ||
-                (int)(timer_since_das / kGravity) <
-                (int)((timer_since_das + Time.deltaTime) / kGravity))
-            {
-                Move(new Vector3(-1, 0, 0));
-            }
-            das_left_timer_ = timer_after_update;
+            MoveDAS(das_left_timer_, new Vector3(-1, 0, 0));
+            das_left_timer_ += Time.deltaTime;
         }
         if (moving_right_)
         {
-            float timer_after_update = das_right_timer_ + Time.deltaTime;
-            float timer_since_das = das_right_timer_ - kDAS;
-            if ((das_right_timer_ <= kDAS && timer_after_update >= kDAS) ||
-                (int)(timer_since_das / kGravity) <
-                (int)((timer_since_das + Time.deltaTime) / kGravity))
-            {
-                Move(new Vector3(1, 0, 0));
-            }
-            das_right_timer_ = timer_after_update;
-            Move(new Vector3(1, 0, 0));
+            MoveDAS(das_right_timer_, new Vector3(1, 0, 0));
+            das_right_timer_ += Time.deltaTime;
         }
         if (moving_down_)
         {
-            if (gravity_timer_ + Time.deltaTime > kGravity)
+            gravity_timer_ += Time.deltaTime;
+            if (gravity_timer_ > kGravity)
             {
                 MoveDown();
                 gravity_timer_ = 0;
-            } else
-            {
-                gravity_timer_ += Time.deltaTime;
             }
         }
     }
