@@ -95,52 +95,121 @@ public class Group : MonoBehaviour
         last_fall_time_ = Time.time;
     }
 
+    void Rotate()
+    {
+        transform.Rotate(0, 0, -90);
+        if (IsValidGridPosition())
+            UpdateGrid();
+        else
+            transform.Rotate(0, 0, 90);
+    }
+
+    void StartLeft()
+    {
+        Move(new Vector3(-1, 0, 0));
+        moving_left_ = true;
+        das_left_timer_ = 0;
+    }
+
+    void StartRight()
+    {
+        Move(new Vector3(1, 0, 0));
+        moving_right_ = true;
+        das_right_timer_ = 0;
+    }
+
+    void StartDown()
+    {
+        MoveDown();
+        moving_down_ = true;
+        gravity_timer_ = 0;
+        gravity_score_++;
+    }
+
+    void KeyboardUpdate()
+    {
+        // Up / Rotate
+        if (Input.GetKeyDown(KeyCode.UpArrow)) Rotate();
+        // Left
+        if (Input.GetKeyDown(KeyCode.LeftArrow)) StartLeft();
+        else if (Input.GetKeyUp(KeyCode.LeftArrow)) moving_left_ = false;
+        // Right
+        if (Input.GetKeyDown(KeyCode.RightArrow)) StartRight();
+        else if (Input.GetKeyUp(KeyCode.RightArrow)) moving_right_ = false;
+        // Down
+        if (Input.GetKeyDown(KeyCode.DownArrow)) StartDown();
+        else if (Input.GetKeyUp(KeyCode.DownArrow)) moving_down_ = false;
+    }
+
+    // Given pixel coordinates of a touch, return which equivalent key was
+    // pressed. Diagram:
+    // \UU/
+    // L\/R
+    // L/\R
+    // /DD\
+    KeyCode TouchToEquivalentKey(Vector2 v)
+    {
+        float slope = (float)(Screen.height) / Screen.width;
+        bool up_right = Screen.height - slope * v.x < v.y;
+        if (slope * v.x < v.y)  // up left half of screen
+        {
+            if (up_right) return KeyCode.UpArrow;
+            else return KeyCode.LeftArrow;
+        } else
+        {
+            if (up_right) return KeyCode.RightArrow;
+            else return KeyCode.DownArrow;
+        }
+    }
+
+    void TouchUpdate()
+    {
+
+        foreach (var touch in Input.touches)
+        {
+            KeyCode equivalent_key = TouchToEquivalentKey(touch.position);
+            switch (touch.phase)
+            {
+                case TouchPhase.Began:
+                    switch (equivalent_key)
+                    {
+                        case KeyCode.UpArrow:
+                            Rotate();
+                            break;
+                        case KeyCode.LeftArrow:
+                            StartLeft();
+                            break;
+                        case KeyCode.RightArrow:
+                            StartRight();
+                            break;
+                        case KeyCode.DownArrow:
+                            StartDown();
+                            break;
+                    }
+                    break;
+                case TouchPhase.Ended:
+                    switch (equivalent_key)
+                    {
+                        case KeyCode.LeftArrow:
+                            moving_left_ = false;
+                            break;
+                        case KeyCode.RightArrow:
+                            moving_right_ = false;
+                            break;
+                        case KeyCode.DownArrow:
+                            moving_down_ = false;
+                            break;
+                    }
+                    break;
+            }
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
-        // Up / Rotate
-        if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            transform.Rotate(0, 0, -90);
-            if (IsValidGridPosition())
-                UpdateGrid();
-            else
-                transform.Rotate(0, 0, 90);
-        }
-        // Left
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            Move(new Vector3(-1, 0, 0));
-            moving_left_ = true;
-            das_left_timer_ = 0;
-        }
-        else if (Input.GetKeyUp(KeyCode.LeftArrow))
-        {
-            moving_left_ = false;
-        }
-        // Right
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            Move(new Vector3(1, 0, 0));
-            moving_right_ = true;
-            das_right_timer_ = 0;
-        }
-        else if (Input.GetKeyUp(KeyCode.RightArrow))
-        {
-            moving_right_ = false;
-        }
-        // Down
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            MoveDown();
-            moving_down_ = true;
-            gravity_timer_ = 0;
-            gravity_score_++;
-        }
-        else if (Input.GetKeyUp(KeyCode.DownArrow))
-        {
-            moving_down_ = false;
-        }
+        KeyboardUpdate();
+        TouchUpdate();
         // Push block down.
         if (Time.time - last_fall_time_ >= 1)
             MoveDown();
